@@ -66,8 +66,10 @@ if __name__ == '__main__':
     from sklearn.datasets import load_boston, load_diabetes
     from sklearn.linear_model import lars_path
     X, y = load_boston(return_X_y=True)
-    p = lars(X, y)
-    pp = lars_path(X,y)[2]
+    y = (y - y.mean()) / y.std()
+    bost_custom_lars = lars(X, y)
+    bost_sklearn_lars = lars_path(X,y)[2]
     X, y = load_diabetes(return_X_y=True)
-    p2 = lars(X, y)
-    pp2 = lars_path(X,y)[2]
+    y = (y - y.mean()) / y.std()
+    diab_custom_lars = lars(X, y)
+    diab_sklearn_lars = lars_path(X,y)[2]
