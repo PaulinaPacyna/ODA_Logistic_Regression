@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def min_plus(x) -> float:
@@ -18,7 +19,7 @@ def lin_regression(X: np.array, y: np.array) -> np.array:
     return np.linalg.inv(X.T @ X) @ X.T @ y
 
 
-def lars(X: np.array, y: np.array, max_it: int = 1e3) -> np.array:
+def lars(X: np.array, y: np.array) -> np.array:
     """Returns lars path. Each column represents coefficients at each iteration.
     There is i non-zero coefficients at ith column.
     Based on https://projecteuclid.org/journals/annals-of-statistics/volume-32/issue-2/Least-angle-regression/10.1214/009053604000000067.full
@@ -55,21 +56,36 @@ def lars(X: np.array, y: np.array, max_it: int = 1e3) -> np.array:
         if not np.isfinite(gamma):
             break
         mi = mi + gamma * u_a
-        if float_comparison(gamma,0):
+        if float_comparison(gamma, 0):
             # if weights are no longer updated
             break
         path = np.concatenate([path, lin_regression(X, mi)], axis=1)
     return path
 
 
+def plot_lars_path(path: np.array, title='Lars visualization', **fig_kwars):
+    plt.figure(**fig_kwars)
+    l1 = np.abs(path).sum(axis=0)
+    for i in range(path.shape[0]):
+        plt.plot(l1, path[i, :])
+    plt.xlabel('L1 norm of all variables')
+    plt.ylabel('Value of each variable')
+    plt.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == '__main__':
     from sklearn.datasets import load_boston, load_diabetes
     from sklearn.linear_model import lars_path
+
     X, y = load_boston(return_X_y=True)
     y = (y - y.mean()) / y.std()
     bost_custom_lars = lars(X, y)
-    bost_sklearn_lars = lars_path(X,y)[2]
+    bost_sklearn_lars = lars_path(X, y)[2]
     X, y = load_diabetes(return_X_y=True)
     y = (y - y.mean()) / y.std()
     diab_custom_lars = lars(X, y)
-    diab_sklearn_lars = lars_path(X,y)[2]
+    diab_sklearn_lars = lars_path(X, y)[2]
+    plot_lars_path(bost_custom_lars, figsize=(8, 6))
+    plot_lars_path(diab_custom_lars, figsize=(8, 6))
