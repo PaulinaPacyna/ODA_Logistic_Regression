@@ -5,7 +5,6 @@ from sklearn.preprocessing import MinMaxScaler
 
 # Following functions can be placed in class LogisticModel
 
-
 def sigmoid(x):
     """
     Numerically stable version of sigmoid (no overflow warnings).
@@ -83,7 +82,7 @@ def F_measure(y: np.array, prediction: np.array) -> float:
 
 
 class LogisticModel:
-    def __init__(self, X: pd.DataFrame, y: pd.DataFrame, random_state: int = None):
+    def __init__(self, X: pd.DataFrame, y: pd.DataFrame, beta: float, random_state: int = None):
         self.var_names = X.columns
         self.scaler = MinMaxScaler()
         X = self.scaler.fit_transform(X)
@@ -92,6 +91,7 @@ class LogisticModel:
         y = MinMaxScaler().fit_transform(y)
         self.X = np.c_[np.ones((X.shape[0], 1)), np.array(X)]  # adding bias
         self.y = np.array(y)
+        self.beta = beta  # coefficient of a L1-regularisation
         self.seed = None if random_state is None else int(random_state)
         self.weights = np.zeros((self.X.shape[1], 1))
 
@@ -159,7 +159,6 @@ class LogisticModel:
         n_epochs=100,
         learning_rate=0.1,
         batch_size=32,
-        random_state=None,
         eps=None,
     ):
         # based on https://realpython.com/gradient-descent-algorithm-python/
@@ -203,11 +202,34 @@ class LogisticModel:
                     break
                 prev_weights = copy(self.weights)
 
+    def newton(self, use_regularisation=False):
+        prediction = predict_probabilities(self.weights, self.X)
+        W = np.diag(prediction * (1 - prediction))
+        H = self.X.T.dot(W).dot(self.X)
+
+        grad = np.dot(self.X.T, (self.y - prediction))
+
+        try:
+            if use_regularisation:
+                # we need to adapt
+                delta = np.dot(np.linalg.inv(H + self.beta * np.eye(np.size(self.weights))))
+            else:
+                delta = np.dot(np.linalg.inv(H), grad)
+        except np.linalg.LinAlgError:
+            delta = 0
+
+        self.weights += delta
+
     def log_likelihood(self) -> float:
         """Returns the log-likelihood value for the model, based on weights"""
         sigm = predict_probabilities(self.weights, self.X)  # sigmoid(beta * x)
         temp = self.y * np.log(sigm) + (1 - self.y) * np.log(1 - sigm)
         return float(np.sum(temp))
+
+    def log_likelihood_l1(self) -> (float, float):
+        log_likelihood = self.log_likelihood()
+        weight_penalty = self.beta * np.sum(np.abs(self.weights))
+        return float(weight_penalty), float(log_likelihood + weight_penalty)
 
     def R2_measure(self) -> float:
         """Returns R2 measure defined as 1 - loglikelihood(model)/loglikelihood(null_model)"""
@@ -227,3 +249,25 @@ class LogisticModel:
             if np.all(log_likelihood_null) == 0
             else 1 - log_likelihood / log_likelihood_null
         )
+
+    @staticmethod
+    def epsL1(weights: np.array, eps: float) -> np.array:
+        return np.sqrt(weights ** 2 + eps)
+
+    @staticmethod
+    def epsL1_grad(weights: np.array, eps: float) -> np.array:
+        return weights / np.sqrt(weights ** 2 + eps)
+
+    @staticmethod
+    def huber(weights: np.array, eps: float):
+        huber_fun = np.vectorize(lambda x: x ** 2 / 2 * eps if np.abs(x) < eps else np.abs(x) - eps / 2)
+        return huber_fun(weights)
+
+    @staticmethod
+    def huber_grad(weights: np.array, eps: float):
+        huber_grad_fun = np.vectorize(lambda x: x / eps if np.abs(x) < eps else np.sign(x) * 1 - eps / 2)
+        return huber_grad_fun(weights)
+
+    @staticmethod
+    def l1_grad(weights: np.array):
+        return np.sign(weights)
