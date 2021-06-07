@@ -63,19 +63,46 @@ def lars(X: np.array, y: np.array) -> np.array:
     return path
 
 
-def plot_lars_path(path: np.array, title='Lars visualization', **fig_kwars):
+def plot_lars_path(path: np.array, title="Lars visualization", **fig_kwars):
     plt.figure(**fig_kwars)
     l1 = np.abs(path).sum(axis=0)
     for i in range(path.shape[0]):
         plt.plot(l1, path[i, :])
-    plt.xlabel('L1 norm of all variables')
-    plt.ylabel('Value of each variable')
+    plt.xlabel("L1 norm of all variables")
+    plt.ylabel("Value of each variable")
     plt.suptitle(title)
     plt.tight_layout()
     plt.show()
 
 
-if __name__ == '__main__':
+def interpolate_path(path, C):
+    # boundary cases
+    if C < 0:
+        return path[:, 0]
+    l1 = np.abs(path).sum(axis=0)  # vector of l1 for each step
+    if C > l1[-1]:
+        return path[:, -1]
+    # number of the last iteration for which the l1 norm didn't exceed the C constraint
+    last_ind = np.max(np.where(l1 < C))
+    # the interpolation can be written as a convex combination of the last and last+1 step
+    # lambda * step_n + (1-lambda) * step_n+1
+    # below we compute the lambda in convex combination
+    lambd = (C - l1[last_ind]) / (l1[last_ind + 1] - l1[last_ind])
+    approx = lambd * path[:, last_ind + 1] + (1 - lambd) * path[:, last_ind]
+    return approx
+
+
+def cut_path(path, C):
+    # boundary case
+    if C < 0:
+        return path[:, 0]
+    l1 = np.abs(path).sum(axis=0)  # vector of l1 norm for each step
+    # number of the last iteration for which the l1 norm didn't exceed the C constraint
+    last_ind = np.max(np.where(l1 < C))
+    return path[:, last_ind]
+
+
+if __name__ == "__main__":
     from sklearn.datasets import load_boston, load_diabetes
     from sklearn.linear_model import lars_path
 
