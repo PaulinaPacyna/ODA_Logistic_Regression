@@ -137,9 +137,8 @@ if __name__ == "__main__":
 
     X, y = load_boston(return_X_y=True)
     bost_custom_lars = Lars(X, y)
-    bost_sklearn_lars_path = lars_path(X, y)[2]
     X, y = load_diabetes(return_X_y=True)
     diab_custom_lars = Lars(X, y)
-    diab_sklearn_lars_path = lars_path(X, y)[2]
     bost_custom_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
     diab_custom_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    
