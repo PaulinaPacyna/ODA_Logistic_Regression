@@ -20,7 +20,7 @@ def lin_regression(X: np.array, y: np.array) -> np.array:
     return np.linalg.inv(X.T @ X) @ X.T @ y
 
 
-class Lars():
+class Lars:
     def __init__(self, X: np.array, y: np.array):
         self.xscaler = StandardScaler()
         self.X = self.xscaler.fit_transform(X)
@@ -55,13 +55,17 @@ class Lars():
             a = np.dot(X.T, u_a)
             A_c = np.arange(len(c)).reshape((-1, 1))[
                 False == float_comparison(np.abs(c), np.max(np.abs(c)))
-                ]
+            ]
             if len(A_c) == 0:
                 gamma = max(c) / A_a
             else:
                 gamma = np.minimum(
-                    min_plus((max(c) + c[A_c]).reshape(-1) / (A_a + a[A_c]).reshape(-1)),
-                    min_plus((max(c) - c[A_c]).reshape(-1) / (A_a - a[A_c]).reshape(-1)),
+                    min_plus(
+                        (max(c) + c[A_c]).reshape(-1) / (A_a + a[A_c]).reshape(-1)
+                    ),
+                    min_plus(
+                        (max(c) - c[A_c]).reshape(-1) / (A_a - a[A_c]).reshape(-1)
+                    ),
                 )
             if not np.isfinite(gamma):
                 break
@@ -72,7 +76,9 @@ class Lars():
             path = np.concatenate([path, lin_regression(X, mi)], axis=1)
         return path
 
-    def plot_lars_path(self, path: np.array = None, title="Lars visualization", **fig_kwars):
+    def plot_lars_path(
+        self, path: np.array = None, title="Lars visualization", **fig_kwars
+    ):
         if path is None:
             path = self.path
         plt.figure(**fig_kwars)
@@ -112,7 +118,7 @@ class Lars():
         last_ind = np.max(np.where(l1 < C))
         return path[:, last_ind].reshape((-1, 1))
 
-    def lars_predict(self, X, constraint, interpolate=True) -> np.array:
+    def predict(self, X, constraint, interpolate=True) -> np.array:
         X = self.xscaler.transform(X)
         if interpolate:
             coeff = self.interpolate_path(self.path, constraint)
@@ -135,8 +141,8 @@ if __name__ == "__main__":
     from sklearn.datasets import load_boston, load_diabetes
 
     X, y = load_boston(return_X_y=True)
-    bost_custom_lars = Lars(X, y)
+    bost_lars = Lars(X, y)
+    bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
     X, y = load_diabetes(return_X_y=True)
-    diab_custom_lars = Lars(X, y)
-    bost_custom_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
-    diab_custom_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    diab_lars = Lars(X, y)
+    diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
