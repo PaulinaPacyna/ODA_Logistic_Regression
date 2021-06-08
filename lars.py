@@ -133,7 +133,6 @@ def lars_irls(X: np.array, y: np.array) -> np.array:
 
 if __name__ == "__main__":
     from sklearn.datasets import load_boston, load_diabetes
-    from sklearn.linear_model import lars_path
 
     X, y = load_boston(return_X_y=True)
     bost_custom_lars = Lars(X, y)
@@ -141,4 +140,3 @@ if __name__ == "__main__":
     diab_custom_lars = Lars(X, y)
     bost_custom_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
     diab_custom_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
-    
