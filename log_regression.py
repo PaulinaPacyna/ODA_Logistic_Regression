@@ -226,7 +226,7 @@ class LogisticModel:
         temp = self.y * np.log(sigm) + (1 - self.y) * np.log(1 - sigm)
         return float(np.sum(temp))
 
-    def log_likelihood_l1(self) -> (float, float):
+    def log_likelihood_l1(self):
         log_likelihood = self.log_likelihood()
         weight_penalty = self.beta * np.sum(np.abs(self.weights))
         return float(weight_penalty), float(log_likelihood + weight_penalty)
