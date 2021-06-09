@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
+from scipy.optimize import line_search
 
 
 def min_plus(x) -> float:
@@ -15,12 +16,23 @@ def float_comparison(a, b, eps=1e-6) -> bool:
     return np.abs(a - b) < eps
 
 
+def sigmoid(x):
+    return np.where(x >= 0,
+                    1 / (1 + np.exp(-x)),
+                    np.exp(x) / (1 + np.exp(x)))
+
+
+def sigmoid_prim(x):
+    s = sigmoid(x)
+    return s * (1 - s)
+
+
 def lin_regression(X: np.array, y: np.array) -> np.array:
     """Beta coefficients for linear regression model: X * B = y + epsilon"""
     return np.linalg.inv(X.T @ X) @ X.T @ y
 
 
-class Lars():
+class Lars:
     def __init__(self, X: np.array, y: np.array):
         self.xscaler = StandardScaler()
         self.X = self.xscaler.fit_transform(X)
@@ -60,8 +72,12 @@ class Lars():
                 gamma = max(c) / A_a
             else:
                 gamma = np.minimum(
-                    min_plus((max(c) + c[A_c]).reshape(-1) / (A_a + a[A_c]).reshape(-1)),
-                    min_plus((max(c) - c[A_c]).reshape(-1) / (A_a - a[A_c]).reshape(-1)),
+                    min_plus(
+                        (max(c) + c[A_c]).reshape(-1) / (A_a + a[A_c]).reshape(-1)
+                    ),
+                    min_plus(
+                        (max(c) - c[A_c]).reshape(-1) / (A_a - a[A_c]).reshape(-1)
+                    ),
                 )
             if not np.isfinite(gamma):
                 break
@@ -72,7 +88,9 @@ class Lars():
             path = np.concatenate([path, lin_regression(X, mi)], axis=1)
         return path
 
-    def plot_lars_path(self, path: np.array = None, title="Lars visualization", **fig_kwars):
+    def plot_lars_path(
+            self, path: np.array = None, title="Lars visualization", **fig_kwars
+    ):
         if path is None:
             path = self.path
         plt.figure(**fig_kwars)
@@ -85,8 +103,9 @@ class Lars():
         plt.tight_layout()
         plt.show()
 
-    @staticmethod
-    def interpolate_path(path, C):
+    def interpolate_path(self, C, path: np.array = None):
+        if path is None:
+            path = self.path
         # boundary cases
         if C < 0:
             return path[:, 0]
@@ -102,8 +121,9 @@ class Lars():
         approx = lambd * path[:, last_ind + 1] + (1 - lambd) * path[:, last_ind]
         return approx.reshape((-1, 1))
 
-    @staticmethod
-    def cut_path(path, C):
+    def cut_path(self, C, path: np.array = None):
+        if path is None:
+            path = self.path
         # boundary case
         if C < 0:
             return path[:, 0]
@@ -112,7 +132,7 @@ class Lars():
         last_ind = np.max(np.where(l1 < C))
         return path[:, last_ind].reshape((-1, 1))
 
-    def lars_predict(self, X, constraint, interpolate=True) -> np.array:
+    def predict(self, X, constraint, interpolate=True) -> np.array:
         X = self.xscaler.transform(X)
         if interpolate:
             coeff = self.interpolate_path(self.path, constraint)
@@ -123,20 +143,35 @@ class Lars():
         return y
 
 
-def lars_irls(X: np.array, y: np.array) -> np.array:
+def lars_irls(X, y, contraint: float, max_iter=1e1) -> np.array:
     """Performs l1 regularized logistic regression based on combination of IRLS and LARS algorithms.
+    Based on https://www.researchgate.net/publication/220269312_Efficient_L1_Regularized_Logistic_Regression
     :param X: matrix of predictors
     :param y: column target vector.
+    :returns: vector of coefficients
     """
-    pass
+    theta = np.zeros((X.shape[1], 1))
+    y = y.reshape((-1,1))
+    for k in range(int(max_iter)):
+        sigm = sigmoid(X @ theta)
+        Lambda = np.diag((sigm * (1 - sigm)).ravel())
+        z = X @ theta + np.array(
+            [(1 - sigmoid(y[i, 0] * theta.T @ X[i, :])) * y[i, 0] / Lambda[i, i] for i in range(X.shape[0])]).reshape(
+            (-1, 1))
+        gamma = Lars((Lambda ** 0.5) @ X, (Lambda ** 0.5) @ z).interpolate_path(contraint)
+        alpha = line_search(lambda t: -sigmoid(X @ t).sum(), lambda t: (-sigmoid_prim(X @ t).T @ X).ravel(), gamma.ravel(), theta.ravel()-gamma.ravel())[0]
+        theta = gamma +alpha * (theta-gamma)
+    return theta
 
-
+    return theta
 if __name__ == "__main__":
-    from sklearn.datasets import load_boston, load_diabetes
+    from sklearn.datasets import load_boston, load_diabetes, load_breast_cancer
 
     X, y = load_boston(return_X_y=True)
-    bost_custom_lars = Lars(X, y)
-    X, y = load_diabetes(return_X_y=True)
-    diab_custom_lars = Lars(X, y)
-    bost_custom_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
-    diab_custom_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    # bost_lars = Lars(X, y)
+    # bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
+    # X, y = load_diabetes(return_X_y=True)
+    # diab_lars = Lars(X, y)
+    # diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    X, y = load_breast_cancer(return_X_y=True)
+    th = lars_irls(StandardScaler().fit_transform(X), y, 2)
