@@ -2,14 +2,28 @@ import cvxpy as cp
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer
 
-X, y = load_breast_cancer(return_X_y=True)
+import pandas as pd
+# Loading preprocessed datasets
+# nba, TARGET
+# bankrupcy, FLAG
+dataset=pd.read_csv(f"data/bankrupcy.csv")
+target_name="FLAG"
+X = dataset.drop(columns=target_name)
+y = dataset[[target_name]]
+
+
+# X, y = load_breast_cancer(return_X_y=True)
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+y_train = np.array(y_train).reshape(-1, )
+y_test = np.array(y_test).reshape(-1, )
 
 m = X_train.shape[0]
 n = X_train.shape[1]
@@ -38,16 +52,27 @@ for i in range(trials):
     test_error[i] = error( (X_test @ beta).value, y_test)
     beta_vals.append(beta.value)
 
+# plt.figure(figsize=(16,10))
 # plt.plot(lambda_vals, train_error, label="Train error")
 # plt.plot(lambda_vals, test_error, label="Test error")
 # plt.xscale("log")
 # plt.legend(loc="upper left")
 # plt.xlabel(r"$\lambda$", fontsize=16)
-# plt.savefig("errors.png")
+# plt.savefig("cvxpy_errors.png")
 
 
+plt.figure(figsize=(16,10))
 for i in range(n):
     plt.plot(lambda_vals, [wi for wi in beta_vals])
 plt.xlabel(r"$\lambda$", fontsize=16)
 plt.xscale("log")
-plt.savefig("variables.png")
+plt.savefig("cvxpy_variables.png")
+
+# PRINT VALUES:
+np.min(test_error)
+lambda_vals[np.argmin(test_error)]
+1-np.min(test_error)
+1-train_error[np.argmin(test_error)]
+beta_vals[np.argmin(test_error)]
+np.linalg.norm(beta_vals[np.argmin(test_error)])
+np.sum(np.abs(beta_vals[np.argmin(test_error)]) > 1e-4)

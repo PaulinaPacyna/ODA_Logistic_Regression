@@ -6,7 +6,18 @@ from sklearn.datasets import load_breast_cancer
 
 from sklearn.linear_model import LogisticRegression
 
-X, y = load_breast_cancer(return_X_y=True)
+import pandas as pd
+# Loading preprocessed datasets
+# nba, TARGET
+# bankrupcy, FLAG
+dataset_name = "bankrupcy"
+target_name="FLAG"
+dataset=pd.read_csv(f"data/" + dataset_name+ ".csv")
+X = dataset.drop(columns=target_name)
+y = dataset[[target_name]]
+
+
+# X, y = load_breast_cancer(return_X_y=True)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -24,4 +35,4 @@ clf.fit(X_train, y_train)
 print(f"Accuracy on training set: {clf.score(X_train, y_train)}")
 print(f"Accuracy on test set: {clf.score(scaler.transform(X_test), y_test)}")
 print(f"Norm of the coefficients: {np.linalg.norm(clf.coef_)}")
-print(f"Number of non-zero coefficients: {np.sum(clf.coef_ != 0)}/{np.size(clf.coef_)}")
+print(f"Number of non-zero coefficients: {np.sum(np.abs(clf.coef_) > 1e-4)}/{np.size(clf.coef_)}")

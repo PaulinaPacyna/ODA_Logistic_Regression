@@ -1,14 +1,24 @@
 import glmnet
 from glmnet.logistic import LogitNet
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer
 
-X, y = load_breast_cancer(return_X_y=True)
+import pandas as pd
+# Loading preprocessed datasets
+# nba, TARGET
+# bankrupcy, FLAG
+dataset_name = "nba"
+dataset=pd.read_csv(f"data/" + dataset_name+ ".csv")
+target_name="TARGET"
+X = dataset.drop(columns=target_name)
+y = dataset[[target_name]]
+
+
+# X, y = load_breast_cancer(return_X_y=True)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -51,5 +61,3 @@ plt.figure(figsize = (16, 12))
 plt.plot(range(np.size(lambdas)), norms)
 plt.xlabel("Lambda Number"); plt.ylabel("Norm")
 plt.savefig("glmnet_norms.png")
-
-LogitNet()
