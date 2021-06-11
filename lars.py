@@ -162,16 +162,13 @@ def lars_irls(X, y, contraint: float, max_iter=1e1) -> np.array:
         alpha = line_search(lambda t: -sigmoid(X @ t).sum(), lambda t: (-sigmoid_prim(X @ t).T @ X).ravel(), gamma.ravel(), theta.ravel()-gamma.ravel())[0]
         theta = gamma +alpha * (theta-gamma)
     return theta
-
-    return theta
+ 
 if __name__ == "__main__":
-    from sklearn.datasets import load_boston, load_diabetes, load_breast_cancer
+    from sklearn.datasets import load_boston, load_diabetes
 
     X, y = load_boston(return_X_y=True)
-    # bost_lars = Lars(X, y)
-    # bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
-    # X, y = load_diabetes(return_X_y=True)
-    # diab_lars = Lars(X, y)
-    # diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
-    X, y = load_breast_cancer(return_X_y=True)
-    th = lars_irls(StandardScaler().fit_transform(X), y, 2)
+    bost_lars = Lars(X, y)
+    bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
+    X, y = load_diabetes(return_X_y=True)
+    diab_lars = Lars(X, y)
+    diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
