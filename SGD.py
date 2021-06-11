@@ -37,18 +37,19 @@ for line in loss_history.split('\n'):
 plt.figure(figsize=(12,8))
 plt.plot(np.arange(len(loss_list)), loss_list)
 plt.xlabel("Time in epochs"); plt.ylabel("Loss")
-plt.show()
+plt.savefig("SGD_loss.png")
 
 plt.figure(figsize=(12,8))
 plt.plot(np.arange(len(bias_list)), bias_list)
 plt.xlabel("Time in epochs"); plt.ylabel("Bias")
-plt.show()
+plt.savefig("SGD_bias.png")
 
 plt.figure(figsize=(12,8))
 plt.plot(np.arange(len(bias_list)), norm_list)
 plt.xlabel("Time in epochs"); plt.ylabel("Norm")
-plt.show()
+plt.savefig("SGD_norm.png")
 
 print(f"Accuracy on training set: {clf.score(X_train, y_train)}")
 print(f"Accuracy on test set: {clf.score(scaler.transform(X_test), y_test)}")
 print(f"Norm of the coefficients: {np.linalg.norm(clf.coef_)}")
+print(f"Number of non-zero coefficients: {np.sum(clf.coef_ != 0)}/{np.size(clf.coef_)}")

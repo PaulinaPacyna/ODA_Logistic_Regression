@@ -16,7 +16,7 @@ X_train = scaler.fit_transform(X_train)
 
 clf = LogisticRegression(penalty="l1", 
                          solver="saga", 
-                         C=1 / 1e-4 / X_train.shape[0], 
+                         C=X_train.shape[0] / 1e-4 , 
                          verbose=1, 
                          tol=1e-3)
 clf.fit(X_train, y_train)
@@ -24,3 +24,4 @@ clf.fit(X_train, y_train)
 print(f"Accuracy on training set: {clf.score(X_train, y_train)}")
 print(f"Accuracy on test set: {clf.score(scaler.transform(X_test), y_test)}")
 print(f"Norm of the coefficients: {np.linalg.norm(clf.coef_)}")
+print(f"Number of non-zero coefficients: {np.sum(clf.coef_ != 0)}/{np.size(clf.coef_)}")
