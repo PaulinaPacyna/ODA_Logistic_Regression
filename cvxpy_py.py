@@ -74,5 +74,5 @@ lambda_vals[np.argmin(test_error)]
 1-np.min(test_error)
 1-train_error[np.argmin(test_error)]
 beta_vals[np.argmin(test_error)]
-np.linalg.norm(beta_vals[np.argmin(test_error)])
+np.sum(np.abs(beta_vals[np.argmin(test_error)]))
 np.sum(np.abs(beta_vals[np.argmin(test_error)]) > 1e-4)

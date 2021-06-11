@@ -62,5 +62,5 @@ plt.savefig("SGD_norm.png")
 
 print(f"Accuracy on training set: {clf.score(X_train, y_train)}")
 print(f"Accuracy on test set: {clf.score(scaler.transform(X_test), y_test)}")
-print(f"Norm of the coefficients: {np.linalg.norm(clf.coef_)}")
-print(f"Number of non-zero coefficients: {np.sum(clf.coef_ != 0)}/{np.size(clf.coef_)}")
+print(f"Norm of the coefficients: {np.sum(np.abs(clf.coef_))}")
+print(f"Number of non-zero coefficients: {np.sum(np.abs(clf.coef_) > 1e-4)}/{np.size(clf.coef_)}")
