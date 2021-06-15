@@ -143,7 +143,7 @@ class Lars:
         return y
 
 
-def lars_irls(X, y, contraint: float, max_iter=1e1) -> np.array:
+def lars_irls(X, y, contraint: float, max_iter=1e2) -> np.array:
     """Performs l1 regularized logistic regression based on combination of IRLS and LARS algorithms.
     Based on https://www.researchgate.net/publication/220269312_Efficient_L1_Regularized_Logistic_Regression
     :param X: matrix of predictors
@@ -151,24 +151,31 @@ def lars_irls(X, y, contraint: float, max_iter=1e1) -> np.array:
     :returns: vector of coefficients
     """
     theta = np.zeros((X.shape[1], 1))
-    y = y.reshape((-1,1))
+    y = y.reshape((-1, 1))
     for k in range(int(max_iter)):
         sigm = sigmoid(X @ theta)
         Lambda = np.diag((sigm * (1 - sigm)).ravel())
-        z = X @ theta + np.array(
+        z = (X @ theta).reshape((-1, 1)) + np.array(
             [(1 - sigmoid(y[i, 0] * theta.T @ X[i, :])) * y[i, 0] / Lambda[i, i] for i in range(X.shape[0])]).reshape(
             (-1, 1))
         gamma = Lars((Lambda ** 0.5) @ X, (Lambda ** 0.5) @ z).interpolate_path(contraint)
-        alpha = line_search(lambda t: -sigmoid(X @ t).sum(), lambda t: (-sigmoid_prim(X @ t).T @ X).ravel(), gamma.ravel(), theta.ravel()-gamma.ravel())[0]
-        theta = gamma +alpha * (theta-gamma)
+        theta = 0.9 * theta + 0.1 * gamma.reshape(
+            (-1, 1))
     return theta
  
 if __name__ == "__main__":
-    from sklearn.datasets import load_boston, load_diabetes
+    from sklearn.datasets import load_boston, load_diabetes, load_wine
 
-    X, y = load_boston(return_X_y=True)
-    bost_lars = Lars(X, y)
-    bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
-    X, y = load_diabetes(return_X_y=True)
-    diab_lars = Lars(X, y)
-    diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    # X, y = load_boston(return_X_y=True)
+    # bost_lars = Lars(X, y)
+    # bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
+    # X, y = load_diabetes(return_X_y=True)
+    # diab_lars = Lars(X, y)
+    # diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    X, y = load_wine(return_X_y=True)
+    X = X[:130]
+    y = y[:130]
+    X = StandardScaler().fit_transform(X)
+    th = lars_irls(X, y, 4)
+    pred = X@th
+    ((pred > 0).ravel() == y.ravel()).mean()
