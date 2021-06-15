@@ -186,7 +186,7 @@ if __name__ == "__main__":
         def assess_regression(c):
             th = lars_irls(X_train, y_train, c, max_iter=1e2)
             th = np.round(th, 10) + 1e-15
-            pred = sigmoid(X_test @ th) > 0.5  # this is the same as sigmoid(X@th)>0.5
+            pred = sigmoid(X_test @ th) > 0.5
             return {'accuracy': (pred.ravel() == y_test.ravel()).mean(),
                     'l1': abs(th).mean(),
                     'n_features': (abs(th) > 1e-15).sum()}
