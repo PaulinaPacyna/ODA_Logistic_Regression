@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from scipy.optimize import line_search
+import pandas as pd
 
 
 def min_plus(x) -> float:
@@ -143,7 +145,7 @@ class Lars:
         return y
 
 
-def lars_irls(X, y, contraint: float, max_iter=1e2) -> np.array:
+def lars_irls(X, y, contraint: float, max_iter=1e2, alpha=0.5) -> np.array:
     """Performs l1 regularized logistic regression based on combination of IRLS and LARS algorithms.
     Based on https://www.researchgate.net/publication/220269312_Efficient_L1_Regularized_Logistic_Regression
     :param X: matrix of predictors
@@ -159,23 +161,54 @@ def lars_irls(X, y, contraint: float, max_iter=1e2) -> np.array:
             [(1 - sigmoid(y[i, 0] * theta.T @ X[i, :])) * y[i, 0] / Lambda[i, i] for i in range(X.shape[0])]).reshape(
             (-1, 1))
         gamma = Lars((Lambda ** 0.5) @ X, (Lambda ** 0.5) @ z).interpolate_path(contraint)
-        theta = 0.9 * theta + 0.1 * gamma.reshape(
+        theta = (1 - alpha) * theta + alpha * gamma.reshape(
             (-1, 1))
     return theta
- 
-if __name__ == "__main__":
-    from sklearn.datasets import load_boston, load_diabetes, load_wine
 
-    # X, y = load_boston(return_X_y=True)
-    # bost_lars = Lars(X, y)
-    # bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
-    # X, y = load_diabetes(return_X_y=True)
-    # diab_lars = Lars(X, y)
-    # diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
-    X, y = load_wine(return_X_y=True)
-    X = X[:130]
-    y = y[:130]
-    X = StandardScaler().fit_transform(X)
-    th = lars_irls(X, y, 4)
-    pred = X@th
-    ((pred > 0).ravel() == y.ravel()).mean()
+
+if __name__ == "__main__":
+    from sklearn.datasets import load_boston, load_diabetes, load_breast_cancer
+
+    REGRESSION = True
+    if not REGRESSION:
+        X, y = load_boston(return_X_y=True)
+        bost_lars = Lars(X, y)
+        bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
+        X, y = load_diabetes(return_X_y=True)
+        diab_lars = Lars(X, y)
+        diab_lars.plot_lars_path(title="Lars for diabetes", figsize=(8, 6))
+    else:
+        X, y = load_breast_cancer(return_X_y=True)
+        X = StandardScaler().fit_transform(X)
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+
+
+        def assess_regression(c):
+            th = lars_irls(X_train, y_train, c)
+            th = np.round(th, 10) + 1e-15
+            pred = sigmoid(X_test @ th) > 0.5  # this is the same as sigmoid(X@th)>0.5
+            return {'accuracy': (pred.ravel() == y_test.ravel()).mean(),
+                    'l1': abs(th).mean(),
+                    'n_features': (abs(th) > 1e-15).sum()}
+
+
+        assessment = pd.DataFrame([assess_regression(c) for c in 10.0 ** np.arange(-16, 6, 2)])
+
+        fig, ax1 = plt.subplots()
+        color = "tab:red"
+        ax1.set_xlabel("C")
+        ax1.set_xscale("log")
+        ax1.plot((assessment["l1"]), assessment["accuracy"], color=color)
+        ax1.tick_params(axis="y", labelcolor=color)
+        ax1.set_ylim((0, 1))
+        ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+        ax2.set_xscale("log")
+        color = "tab:blue"
+        ax2.set_ylabel("Number of features", color=color)
+        ax1.set_ylabel("Accuracy", color="tab:red")  # we already handled the x-label with ax1
+        ax2.plot((assessment["l1"]), assessment["n_features"], color=color)
+        ax2.tick_params(axis="y", labelcolor=color)
+        ax2.set_ylim((0, 30))
+        plt.title("Lasso logistic regression for breast cancer dataset.")
+        plt.show()
