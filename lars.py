@@ -169,8 +169,8 @@ def lars_irls(X, y, contraint: float, max_iter=1e2, alpha=0.5) -> np.array:
 if __name__ == "__main__":
     from sklearn.datasets import load_boston, load_diabetes, load_breast_cancer
 
-    REGRESSION = True
-    if not REGRESSION:
+    LOGISTIC = True
+    if not LOGISTIC:
         X, y = load_boston(return_X_y=True)
         bost_lars = Lars(X, y)
         bost_lars.plot_lars_path(title="Lars for boston", figsize=(8, 6))
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
 
         def assess_regression(c):
-            th = lars_irls(X_train, y_train, c)
+            th = lars_irls(X_train, y_train, c, max_iter=1e3)
             th = np.round(th, 10) + 1e-15
             pred = sigmoid(X_test @ th) > 0.5  # this is the same as sigmoid(X@th)>0.5
             return {'accuracy': (pred.ravel() == y_test.ravel()).mean(),
