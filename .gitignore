@@ -1,7 +1,5 @@
-
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/inspectionProfiles/Project_Default.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/ODA_Logistic_Regression.iml
-.idea/vcs.xml
+# Default ignored files
+/shelf/
+/workspace.xml
+/.vscode
+/__pycache__
