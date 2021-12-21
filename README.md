@@ -3,4 +3,4 @@ Implementation of Regularized Least Angle Logistic Regression and Iterative Rewe
 Files:
  - lars.py - our implementation of the LARS-IRLS algorithm
  - log_regrassion - our implementation of stochastic gradient descent, gradient descent and IRLS algoritms 
- - *.py - assessment of build-in regression algorithm
+ - *.py - assessment of build-in regression algorithms
