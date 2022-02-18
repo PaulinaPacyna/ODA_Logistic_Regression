@@ -1,6 +1,7 @@
-# Optimization in Data Analysis - Logistic Regression
-Implementation of Regularized Least Angle Logistic Regression and Iterative Reweighted Least Squared algoritm for a university project.
+# Optimization in Data Analysis - Logistic Regression with L1 Regularization
+Implementation of Regularized Least Angle Logistic Regression, Iterative Reweighted Least Squared and other algoritms that optimize the parameters in logistic regression problem with L1-regularization.
 Files:
  - lars.py - our implementation of the LARS-IRLS algorithm
  - log_regrassion - our implementation of stochastic gradient descent, gradient descent and IRLS algoritms 
  - *.py - assessment of build-in regression algorithms
+ - _LogisticRegressionL1Report.pdf_ - report consisting of all the details and obtained results.
